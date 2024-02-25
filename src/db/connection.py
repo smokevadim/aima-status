@@ -42,8 +42,8 @@ async def get_session():
         async_session = SESSION_MAKER
         async with async_session() as session:
             yield session
-    except:
+    except Exception as e:
         await session.rollback()
-        raise
+        raise e
     finally:
         await session.close()

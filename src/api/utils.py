@@ -1,7 +1,6 @@
 from typing import Iterable
 
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
-from pydantic import BaseModel
 
 
 def generate_inline_keyboard(entities: Iterable = None, callback_prefix: str = None,
