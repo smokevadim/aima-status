@@ -1,0 +1,66 @@
+version: '3.7'
+
+volumes:
+  pgdata:
+  my-data:
+services:
+  postgres:
+    env_file:
+      - ../.env
+    image: postgres:15.6
+    container_name: DB_aima_status
+    hostname: DB_aima
+    restart: always
+    environment:
+      DB_USER: ${DB_USER}
+      DB_PASSWORD: ${DB_PASSWORD}
+      DB_DB: ${DB_DB}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    expose:
+      - 5438
+    ports:
+      - 5438:5438
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    command: -p 5438
+
+  main-aima_status: &main-aima_status
+    env_file:
+      - ../.env
+    restart: always
+    build:
+      context: ..
+      args:
+        INSTALL_DEV_REQUIREMENTS: "true"
+    container_name: main-aima_status
+    environment:
+      - WAITING_DATABASE=true
+      - DB_HOST=DB_aima
+      - DB_PORT=5438
+    #    command: python main.py
+    #    command: uvicorn main:app --host 0.0.0.0 --port 8000 --access-log
+    command: chmod +x restart_tor.sh
+    volumes:
+      - .:/usr/src/app
+    ports:
+      - 8000:8000
+    depends_on:
+      - postgres
+
+  pgadmin:
+    env_file:
+      - ../.env
+    restart: always
+    image: dpage/pgadmin4
+    container_name: pgadmin_container
+    environment:
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_DEFAULT_EMAIL}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_DEFAULT_PASSWORD}
+    ports:
+      - "666:80"
+    volumes:
+      - my-data:/var/lib/pgadmin
