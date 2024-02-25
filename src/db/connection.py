@@ -1,13 +1,13 @@
 import os
-from contextlib import contextmanager
+from contextlib import asynccontextmanager
 from pathlib import Path
 
 import alembic.command
 import alembic.config
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
+from dotenv import load_dotenv
+from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker
 
-SESSION_MAKER = None
+load_dotenv()
 
 
 def get_url():
@@ -25,7 +25,7 @@ def get_url():
 
 
 # if os.getenv('ENV') != 'TEST':
-SESSION_MAKER = sessionmaker(bind=create_engine(get_url()))
+SESSION_MAKER = async_sessionmaker(bind=create_async_engine(get_url()))
 
 
 def migrate_in_memory(revision: str = "head", root_directory: str = None):
@@ -36,18 +36,14 @@ def migrate_in_memory(revision: str = "head", root_directory: str = None):
     alembic.command.upgrade(config, revision)
 
 
-@contextmanager
-def transactional(session_maker=SESSION_MAKER):
-    """Provide a transactional scope around a series of operations."""
-    if session_maker is None:
-        yield None
-    else:
-        session = session_maker()
-        try:
+@asynccontextmanager
+async def get_session():
+    try:
+        async_session = SESSION_MAKER
+        async with async_session() as session:
             yield session
-            session.commit()
-        except:
-            session.rollback()
-            raise
-        finally:
-            session.close()
+    except:
+        await session.rollback()
+        raise
+    finally:
+        await session.close()

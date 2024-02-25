@@ -2,6 +2,7 @@ from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 
 from api import datatypes
 from api import utils
+from db import usecases as db_usecases
 
 menu = [
     [InlineKeyboardButton(text="📝 Subscribe", callback_data="subscribe"),
@@ -9,13 +10,19 @@ menu = [
     [InlineKeyboardButton(text="🔎 Help", callback_data="help")]
 ]
 menu = InlineKeyboardMarkup(inline_keyboard=menu)
-# exit_kb = ReplyKeyboardMarkup(keyboard=[[KeyboardButton(text="◀️ Back to menu")]], resize_keyboard=True)
 iexit_kb = InlineKeyboardMarkup(inline_keyboard=[[InlineKeyboardButton(text="◀️ Back to menu", callback_data="menu")]])
 
 calendar_keyboard = utils.generate_inline_keyboard(back_name='subscribe', next_name='city')
 
 cities = [str(datatypes.City(_)) for _ in ('Lisbon', 'Setubal', 'Algarve', 'Porto')]
-cities_keyboard = utils.generate_inline_keyboard(cities, datatypes.City.prefix)
+
+
+async def create_cities_keyboard():
+    cities = await db_usecases.get_cities()
+    cities = [_.id for _ in cities]
+    cities_keyboard = utils.generate_inline_keyboard(cities, datatypes.City.prefix)
+    return cities_keyboard
+
 
 aima = [str(datatypes.AIMA(_)) for _ in ('Alfa', 'Bravo', 'Charly', 'Delta', 'Echo')]
 aima_keyboard = utils.generate_inline_keyboard(aima, datatypes.AIMA.prefix)
